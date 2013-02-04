@@ -1,0 +1,16 @@
+; Example of UPAW for the Waldorf Microwave II/XT, 
+
+; This one produces a waveshaping table
+
+Wavetable 97	;load table to this location
+
+wsflag : $8000	;set true
+
+WA 		: 29 	; source wave
+PA		: 0  	; start phase = 0
+DA		: 1.0  	; start with freqency 1.0
+WB		: 28  	; Wave b
+WSD		: 10000	; wavshaping depth
+
+P1		: WSD	; decrement depth
+I1		: -10000/60 ; down to zero

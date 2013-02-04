@@ -1,0 +1,15 @@
+; Example of UPAW for the Waldorf Microwave II/XT, 
+; This one produces an FM table
+
+Wavetable 97	;load table to this location
+
+fmflag  : -1	;set true
+window	: -1	;apply window
+
+fca		: 15.0
+fma		: 3.0
+mda		: 3000
+
+
+P1		: fca	
+I1		: -15.0/70

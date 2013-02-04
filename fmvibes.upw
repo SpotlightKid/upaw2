@@ -1,0 +1,17 @@
+; Example of UPAW for the Waldorf Microwave II/XT, 
+; This one produces a FM table similar to the MW1
+; internal table R87 "Vibes" .
+
+
+Wavetable 97	;load table to this location
+
+fmflag : $8000	;set true
+
+fca : 4.0		;carrier frequency 4.0
+fma : 15.0 		;modulator frequency 15.0
+mda : 1500		;modulation depth
+fcb : 1.0		;fundamental
+mdb : 0
+
+P1  : mda		;decrease depth
+I1  : -1500/60	;final depth = 0

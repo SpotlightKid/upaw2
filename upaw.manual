@@ -1,0 +1,158 @@
+
+This is the description of the UPAW Assembler Version 1.0
+(c) Waldorf Electronics GmbH Germany
+Tue Feb  8 15:38:50 MET 1994
+
+
+COMMANDLINE
+
+The UPAW parser expects a commandline of the following format :
+upaw sourcefile [-dDevicenumber] [-wWavetablenumber] [-lListfile] [-oOutfile]
+
+sourcefile
+ This specifies the source file to be parsed.
+ See below for a detailed description of the syntax.
+
+-dDevicenumber (optional)
+ Ths specifies a Device ID that will be included in the System Exclusive
+ MIDI String. Default is $7f, which is speacial and will be accepted by
+ any microwave. However, if you have more than one microwave, it might be
+ useful to set their Device IDs to different values, so you can select
+ which of them will accept the dump.
+ example : -d10 will select all your microwaves with their Device ID set
+           to ten.
+
+-wWavetablenumber (optional)
+ This specifies where the wavetable is supposed to reside in the microwaves
+ memory. Remember, there are 24 locations for user wavetables, 12 of these
+ are in internal RAM, these are numbered from 33 to 44, the next twelve
+ numbered from 45 to 56 are cartridge wavetables. If you send a control table
+ dump to a location on the card without having inserted one, the data will
+ pollute byte-heaven, so be careful.
+ example : -w33 will select wavetable location "User 1  R33" . 
+
+-lListfile (optional)
+ A listing will be written to the specified file, but only if no errors
+ have occured during the parsing process.
+ example : -lMy.list will create a listing called "My.list" .
+
+-oOutfile (optional)
+ The System Exclusive MIDI string will be written to the specified file, but
+ only if no errors have ben detected. The file should be sent over MIDI by
+ your standard dump utility. However, on Atari ST machines, the dump will
+ be sent immediately by the program and no output file is created by default.
+ Otherwise, the default output is "UPAW.GSX", according to the Generic
+ Sysex extension used in the Waldorf Wave's dump utility. 
+ example : -ofm5upaw.bnk
+ will save the SysEx string in a file called "fm5upaw.bnk".
+
+SYNTAX
+
+The parser accepts the following Syntax :
+
+[Parameternumber : Parametervalue] [; comment]
+
+where both of the braced expressions are optional.
+following types of expressions are accepted :
+
+-Labels
+ Only the 61 fixed labels for the parameternumbers are accepted.
+ There is no way to define new labels in the source. See the
+ upaw format description for valid names of labels. Labels are
+ case insesitive.
+ example : "Window"
+ the same as "3", which is the value of this label.
+
+-Decimal numbers
+ Strings consisting of characters from '0' to '9'. The number must be
+ in the range from -32768 to +32767, this is not checked !
+ example : 123
+
+-Hexadecimal numbers
+ The prefix '$' indicates a hexadecimal number, the string must
+ only contain characters from '0' to '9' and from 'A' to 'F'.
+ The number must be in the range from $0000 to $FFFF, this is
+ not checked !
+ example : $D00F
+
+-Fixpoint numbers
+ Any decimal number followed by a '.' and some optional characters
+ in the range from '0' to '9' is considered a fixpoint number, the
+ valid range is -64.00 to +63.99, this is not checked !
+ The fractional part consists of the lower 9 bits and the integer
+ part of the upper 7 bits.
+ example : 3.1415
+
+-operators
+ Following characters are treated as operators :
+ '+', '-', '*', '/', '&', '|', '^'.
+ The priorities of operators are completely ignored, and, even worse,
+ the operations preceed from right to left. The operation which is
+ performed is the same as in the programming language C. All numbers
+ are treated as integers, so operations with fixpoint numbers will
+ not always yield correct results. However, following expressions
+ will be parsed correctly :
+
+ 3.1415*7	; multiply fixpoint number with integer,
+ 50.2/6		; division of fixpoint by integer
+ 2.3+1.2	; addition of two fixpoint numbers
+ 5.1-3.22	; subtraction of two fixpoint numbers
+ 
+ The parser will fail on the following expressions :
+
+ 1.0*2.0	; multiplication of two fixopint numbers, result is garbage
+ 50/1.0		; division by fixpoint number
+ 50.1/1.0	; division by fixpoint number
+ 5+0.1		; addition of fixpoint and int
+ 3.1415&5	; C compilers are right to reject such nonsense, the upaw
+                  parser simply creates garbage.
+ 3*2+4		; addition is performed before multiply, result is 18 instead
+ 		  of 10. Write 4+2*3 instead.
+
+A numbers with a leading '-' will be recognized as negative, this works
+even for labels.
+
+There are two keywords that are treated special :
+
+"Device" : must be followed by a number and sets the Device ID
+that will be included in the SysEx string.
+
+"Wavetable" : must be followed by a number and selects the location
+of the wavetable in the Microwave.
+
+However, if one of these has already been given on the commandline,
+it will be ignored, thus commandline options take priority.
+
+
+
+CODE GENERATION
+
+Because most UPAWs will only need a few of all possible parameters,
+There is no need to initialize unused parameters, this is done by
+the assembler in advance. All values are set to zero except the
+Incrementors' parameterindices, these are disabled by setting them
+to -1. The best way to create your UPAWs is to use the labels
+as parameterindices like this :
+
+- - - - - - - - - - snip - - - - - - - - -
+; Example UPAW
+; performs simple FM
+
+Wavetable 33
+
+fmflag: -1	; set FM flag
+
+fca : 1.0	; set carrier to frequency 1
+fma : 2.0       ; modulator frequency is 2
+mda : 2000	; modulation depth
+
+p1 : mda	; increment modulation depth
+i1 : -2000/60   ; increment down to zero
+- - - - - - - - - - snip - - - - - - - - -
+
+This source will yield a very simple FM wavetable with
+only six parameters, the rest is "don't care".
+
+Happy upawing,
+
+Stefan

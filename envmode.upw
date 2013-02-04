@@ -1,0 +1,22 @@
+; Example of UPAW for the Waldorf Microwave II/XT, 
+; This one produces an envelope table
+
+Wavetable 97	;load table to this location
+
+emflag  : $8000	;set true
+
+T1		: 60
+L1		: 32767
+T2		: 1
+L2		: -32768
+T3		: 1
+L3		: 32767
+T4		: 2
+L4		: 0
+
+P1		: T1
+I1		: -1
+P2		: L2
+I2		: 16384/15
+P3		: T4
+I3		: 1

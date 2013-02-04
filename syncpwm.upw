@@ -1,0 +1,17 @@
+; Example of UPAW for the Waldorf Microwave II/XT, 
+; This one produces a Sync/PWM mode table
+
+Wavetable 97	;load table to this location
+
+WA 		: 29 	; source wave
+PA		: 0  	; start phase = 0
+DA		: 1.0  	; start with freqency 1.0
+NA		: 63
+WB		: 28  	; Wave b
+PB		: 63.0
+nb		: 64
+
+P1		: na	; decrement number of samples a
+I1		: -1
+p2		: pb	; startphase b
+i2		: -1

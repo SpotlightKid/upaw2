@@ -1,0 +1,250 @@
+Description of user programmable algorithmic wavetables
+in the Waldorf Microwave, Software Release 2.0
+
+Mon Jan 31 15:24:34 MET 1994
+Stefan Stenzel  <stenz@waldorf-gmbh.de>
+
+
+Preface
+
+The feature of user programmable wavetables was added to
+the Microwave system to overcome the lack of sufficient
+memory for user waves for complex user wavetables. The
+algorithm is coded in the control table, see below for
+a detailed description. However, the control table can
+still be used as a normal wave control table as described
+in the Microwave Sysex Manual. The format given below is
+intended to be easy to understand and to offer a large
+range of possibilities for wavetables generation.
+
+
+Description
+
+The byte order of all numbers described herein is big-endian,
+which means that an INT consists of two successive bytes where
+the fist is the most significant byte MSB, the second 
+is the least significant byte LSB. A LONG consists of
+four successive bytes. There is only one LONG involved in
+the user programmable algorithmic wavetables ( UPAW ) format:
+If the first LONG equals $12DECODE, the following data is
+interpreted as a UPAW, otherwise it is a normal wave control
+table. The parameters of the UPAW are all signed INTs, some of
+them are treated as fixpoint numbers. There are four different
+algorithms used in wavetable generation : FM Synthesis, Waveshaping,
+Envelope mode, and a Sync/Pulswidth mode. The parameters are
+numbered from 0 to 60, numbering of parameters is very important
+for reasons given below. The parameter field starts directly
+after the magic LONG described above, and here they are :
+
+
+Label		Index		Comment
+------------------------------------------------------------------
+ Flags
+
+FMflag		0		$8000 - $FFFF : FM Synthesis
+WSflag		1		$8000 - $FFFF : Waveshaping
+EMflag		2		$8000 - $FFFF : Envelope mode,
+						else Sync/Pulsewidth mode
+Window		3		$8000 - $FFFF : Apply window to wave
+
+ FM parameters
+
+FCA		4		Frequency of carrier A
+FMA		5		Frequency of modulator A
+MDA		6		Modulation depth A
+FCB		7		Frequency of carrier B
+FMB		8		Frequency of modulator B
+MDB		9		Modulation depth B
+
+ Envelope mode parameters
+
+T1		10		Time 1
+L1		11		Level 1
+T2		12		Time 2
+L2		13		Level 2
+T3		14		Time 3
+L3		15		Level 3
+T4		16		Time 4
+L4		17		Level 4
+T5		18		Time 5
+L5		19		Level 5
+T6		20		Time 6
+L6		21		Level 6
+T7		22		Time 7
+L7		23		Level 7
+T8		24		Time 8
+L8		25		Level 8
+
+ Waveshaping and Sync/Pulswidht mode prameters
+
+WA		26		Wavenumber A
+PA		27		Startphase wave A
+DA		28		Delta phase wave A
+NA		29		Number of samples wave A
+WB		30		Wavenumber B
+PB		31		Startphase wave B
+DB		32		Delta phase wave B
+NB		33		Number of samples wave B
+WSD		34		Waveshaping depth
+
+ Parameter increment parameters
+
+P1		35		Parameter 1 index
+I1		36		Parameter 1 increment
+P2		37		Parameter 2 index
+I2		38		Parameter 2 increment
+P3		39		Parameter 3 index
+I3		40		Parameter 3 increment
+P4		41		Parameter 4 index
+I4		42		Parameter 4 increment
+P5		43		Parameter 5 index
+I5		44		Parameter 5 increment
+P6		45		Parameter 6 index
+I6		46		Parameter 6 increment
+P7		47		Parameter 7 index
+I7		48		Parameter 7 increment
+P8		49		Parameter 8 index
+I8		50		Parameter 8 increment
+P9		51		Parameter 9 index
+I9		52		Parameter 9 increment
+P10		53		Parameter 10 index
+I10		54		Parameter 10 increment
+P11		55		Parameter 11 index
+I11		56		Parameter 11 increment
+P12		57		Parameter 12 index
+I12		58		Parameter 12 increment
+P13		59		Parameter 13 index
+I13		60		Parameter 13 increment
+
+The wavetable generation procedure is as follows :
+Depending on the settings of the three first flags,
+the first wave is calculated. If the Window flag is
+set, a window function is applied to the wave.
+Then, the thirteen parameter incrementors are
+processed in sequence : If the parameter index is
+in the valid range from 0 to 60, the corresponding
+increment is added to the indicated parameter.
+Please note that parameter indices and increments
+can be incremented as well as usual parameters, by
+this mean it is possible to increment parameters in
+an exponential way, or it is possible to create
+switches and flip-flops by incrementing parameter
+indices and changing them from valid to invalid
+or vice versa. However, if a parameter index is not
+in the valid range from 0 to 60, nothing at all
+happens. After all thirteen incrementors have been
+processed, The next wave will be generated according
+to the possibly altered parameters.
+
+
+
+Frequency Format
+
+Parameters FCA,FMA,FCB,FMB,DA, and DB determine the
+frequency of a wave component. They are fixpoint numbers
+with 7 bits integer part and 9 bits fractional part, the
+range is from -64.00 to 63.99 . Thus, a value of 1.0 is
+coded as $0200, a value of -5 is coded as $F600 and so on.
+A value of 1.0 will generate a wave with a frequency of 1,
+which means a full cycle of this wave has 128 samples, but
+only the first 64 of these are calculated and stored as
+a wave. A value of 2.0 will geneate a wave with twice this
+frequency, A value of -3.0 will generate a wave with three
+times the fundamental frequency backwards. So the number of
+wave cycles is determined by the frequency information, even
+with fractional numbers like 1.5 . However, when a fractional
+number of cycles is produced, the wave will sound a bit harsh
+because only even numbered frequencies can be reproduced
+correctly by the microwave oscillators. This effect can be
+minimized by applying a window function to the wave.
+
+
+
+FM Synthesis
+
+This is a simple, four Operator FM algorithm.
+The result of two identical carrier/modulator pairs
+gives the resulting wave, following the formula :
+
+wavesample(n) = sin(FCA*n*pi/64 + MDA*sin(FMA)) +
+		sin(FCB*n*pi/64 + MDB*sin(FMB))
+
+FCA,FMA,FCB,FMB contain the frequency information for
+each carrier/modulator, MDA and MDB are the modulation
+depths as fixpoint numbers. If the fractional part of
+one of the frequencies is not zero, it is a good idea
+to apply the window function to the resulting wave in
+order to reduce the harshness. This is easily done by
+setting the Window flag into the valid range from
+$8000 to $FFFF.
+
+
+ Envelope mode
+
+Eight Time/Level pairs are used to create a waveform
+in a way similar to usual multi stage envelopes. The
+Levels are signed fixpoint numbers with fractional
+part of eight ( 8 ! ) bits, giving a range from -128.0
+to 127.99 , the times are unsigned integers where only
+the LSB is significant, the MSB is completely ignored.
+The Time values do not exactly represent a time, they
+only determine how many samples are used to reach the
+corrsponding level. Only 64 samples are created, if the
+total amount of times is above 64, the rest is ignored.
+
+
+ Waveshaping
+
+following parameters are relevant for waveshaping :
+WA,PA,DA,WB,WSD. WA is the Wavenumber for the wave
+whose samples are used as indices for wave B, WB.
+A valid range for wavenumbers is 0 to 421, the same
+as for usual control tables. In addition, the values
+from 600 to 660 are used to indicate a previously
+calculated wave of the currently calculated UPAW.
+If a wave is indicated that has not already been
+calculated, the result is undefined and the whole
+wavetable will sound different any time the microwave
+is switched on, so be warned !
+DA is the frequency of wave A, PA is the initial Phase
+for wave A. If the initial phase is not zero, a harshness
+similar to that produced by fractional frequencies may occur,
+but it can not be reduced very effectively by applying the
+window function. However, creating a wavetable by increasing
+only the initial phase of a component can yield very
+interesting sounding results.
+After wave A has been calculated, each of its samples is
+multiplied by WSD, the wave shaping depth, then it is
+used as an index in wave B, giving the final wave sample.
+The formula is :
+
+wavesample(n) = wave_B(Depth*wave_A(n))
+
+
+Sync/Pulswidth mode
+
+NA determines, how many samples are created using the
+parameters WA,PA,DA as described above. If NA is greater
+than 64, only 64 samples are generated. If NA is lower
+than 64, NB samples are created in the same way using the
+WB,PB,DB parameters. If there are still less than 64 samples
+generated, the rest will be filled with zeros. If a wavenumber,
+WA or WB is invalid, zeros will be used instead. The special
+numbers 600-660 described in chapter "Waveshaping" are also
+valid here plus some extra wave numbers : 500 will select the
+internal sine generator, 501 selects a saw wave generator, and
+502 selects a pulse wave generator.
+
+Flags
+
+The four flag parameters are used this way :
+If the first parameter is in the range from $8000 to $FFFF,
+The FM algorithm will be selected and the next two flags will
+be ignored. If the second flag is set, Waveshaping is performed
+and the next flag is ignored. If the third flag is set, Envelope
+mode is selected, else Sync/Pulsdwidth mode is used. The Window
+flag is checked after each wave has ben finished, no matter which
+algorithm has been used. A flag is "true" if the leftmost bit is
+set, by this mean it is easily possible to switch algorithms in
+the middle of a wavetable by simply incrementing it.
+
