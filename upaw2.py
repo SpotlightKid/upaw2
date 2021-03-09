@@ -26,10 +26,12 @@ __version__ = "1.0"
 __author__  = "Christopher Arndt"
 __usage__   = "%s [OPTIONS] FILE.upaw" % __program__
 
-SMF_PREFIX = ('MThd\0\0\0\x06\0\0\0\x01\0\x1e'
-    'MTrk\0\0\x01\x0F\0\xF0\x82\x07')
+SMF_PREFIX = (
+    b'MThd\0\0\0\x06\0\0\0\x01\0\x1e'
+    b'MTrk\0\0\x01\x0F\0\xF0\x82\x07'
+)
 
-SMF_SUFFIX = '\x78\xFF\x2F\0'
+SMF_SUFFIX = b'\x78\xFF\x2F\0'
 
 OPCODELIST = [
     # Mode flags
@@ -236,7 +238,7 @@ def create_upaw_sysex(upaw_code, options):
     sysex.append(cs)
     sysex.append(0xF7)      # End of SysEx or EOX */
 
-    return "".join(chr(i) for i in sysex)
+    return bytes(sysex)
 
 
 def write_listfile(filename, upaw_code, options):
@@ -279,7 +281,7 @@ def write_midifile(filename, sysex, options):
     if filename == options.infile:
         raise IOError("Output filename must not be the same as input filename.")
 
-    with open(filename, 'w') as fo:
+    with open(filename, 'wb') as fo:
         fo.write(SMF_PREFIX)
         fo.write(sysex[1:-1])
         fo.write(SMF_SUFFIX)
@@ -288,7 +290,7 @@ def write_sysexfile(filename, sysex, options):
     if filename == options.infile:
         raise IOError("Output filename must not be the same as input filename.")
 
-    with open(filename, 'w') as fo:
+    with open(filename, 'wb') as fo:
         fo.write(sysex)
 
 def main(args=None):
